@@ -1,19 +1,18 @@
 from flask import Flask, jsonify
-import os             
+import os
 import threading
 import websocket
 import json
 import time
-import math
 from collections import defaultdict, deque
-from typing import List, Tuple, Dict, Any
-import numpy as np
+import math
+
 # ================= CẤU HÌNH =================
-WS_URL = "wss://taixiumd5.system32-cloudfare-356783752985678522.monster/signalr/reconnect?transport=webSockets&connectionToken=SgIYXqnbkJRw6FvkcaXYVrAcj9Rkcx758qlxIanF3odMFBbrqY%2BJJ%2FVvZUnOX0Z2pNFJwckC2pCxXefKhAclClEefIExyEGKc9Z6zfoZsoa9oUAzcs1LNw2G3jxr7w9j&connectionData=%5B%7B%22name%22%3A%22md5luckydiceHub%22%7D%5D&tid=6&access_token=05%2F7JlwSPGzg4ARi0d7%2FLOcNQQ%2BecAvgB3UwDAmuWFJiZj%2Blw1TcJ0PZt5VeUAHKLVCmODRrV5CHPNbit3mc868w8zYBuyQ5Xlu1AZVsEElr9od2qJ8S9N2GLAdQnd0VL8fj8IAGPMsP45pdIIXZysKmRi40b%2FOVLAp4yOpkaXP3icyn2%2Fodm397vVKSY9AlMCcH15AghVm3lx5JM%2BoUuP%2Fkjgh5xWXtdTQkd9W3%2BQBY25AdX3CvOZ2I17r67METGpFv8cP7xmAoySWEnokU2IcOKu3mzvRWXsG7N5sHFkv%2FIKw%2F1IPCNY2oi8RygWpHwIFWcHGdeoTeM6kskfrqNSmhapPBCREit0So1HOC6jOiz5IyKVNadwp8EfsxKzBOKE0z0zdavvY6wXrSZhIJeIqKqVAt3SEuoG82a%2BjwxNo%3D.5a1d88795043d5c4ef6538c9edfb5ff93e65b852d89b71344bdd5ec80eb63e24"
+WS_URL = "wss://taixiumd5.system32-cloudfare-356783752985678522.monster/signalr/reconnect"
 PING_INTERVAL = 15
 
 # ================= BIẾN TOÀN CỤC =================
-latest_result: Dict[str, Any] = {
+latest_result = {
     "Phien": None,
     "Xuc_xac_1": -1,
     "Xuc_xac_2": -1,
@@ -25,7 +24,7 @@ latest_result: Dict[str, Any] = {
     "id": "daubuoi"
 }
 
-history = deque(maxlen=200)  # Lưu lịch sử kết quả (T/X)
+history = deque(maxlen=200)
 lock = threading.Lock()
 
 # ================= 20 THUẬT TOÁN TÀI XỈU =================
@@ -34,7 +33,7 @@ class TaiXiuReal20Algorithms:
     
     # === 1. THUẬT TOÁN CÂN BẰNG CHUỖI ===
     @staticmethod
-    def algo_01_sequence_balance(history: List[str]) -> Tuple[str, float]:
+    def algo_01_sequence_balance(history):
         """Cân bằng chuỗi dài/ngắn"""
         if len(history) < 5: return 'T', 0.52
         
@@ -60,7 +59,7 @@ class TaiXiuReal20Algorithms:
     
     # === 2. THUẬT TOÁN MA TRẬN CHUYỂN TIẾP ===
     @staticmethod
-    def algo_02_transition_matrix(history: List[str]) -> Tuple[str, float]:
+    def algo_02_transition_matrix(history):
         """Ma trận chuyển tiếp Markov bậc 2"""
         if len(history) < 10: return 'T', 0.53
         
@@ -90,7 +89,7 @@ class TaiXiuReal20Algorithms:
     
     # === 3. THUẬT TOÁN PHÂN TÍCH TẦN SUẤT ===
     @staticmethod
-    def algo_03_frequency_analysis(history: List[str]) -> Tuple[str, float]:
+    def algo_03_frequency_analysis(history):
         """Phân tích tần suất xuất hiện"""
         if len(history) < 15: return 'T', 0.53
         
@@ -112,7 +111,7 @@ class TaiXiuReal20Algorithms:
     
     # === 4. THUẬT TOÁN PATTERN NHỊ PHÂN ===
     @staticmethod
-    def algo_04_binary_pattern(history: List[str]) -> Tuple[str, float]:
+    def algo_04_binary_pattern(history):
         """Phát hiện pattern trong chuỗi nhị phân"""
         if len(history) < 8: return 'T', 0.52
         
@@ -145,7 +144,7 @@ class TaiXiuReal20Algorithms:
     
     # === 5. THUẬT TOÁN ĐỘNG LƯỢNG ===
     @staticmethod
-    def algo_05_momentum(history: List[str]) -> Tuple[str, float]:
+    def algo_05_momentum(history):
         """Phân tích động lượng xu hướng"""
         if len(history) < 8: return 'T', 0.52
         
@@ -167,7 +166,7 @@ class TaiXiuReal20Algorithms:
     
     # === 6. THUẬT TOÁN PHÂN TÍCH CỤM ===
     @staticmethod
-    def algo_06_cluster_analysis(history: List[str]) -> Tuple[str, float]:
+    def algo_06_cluster_analysis(history):
         """Phân tích cụm xuất hiện"""
         if len(history) < 12: return 'T', 0.53
         
@@ -201,7 +200,7 @@ class TaiXiuReal20Algorithms:
     
     # === 7. THUẬT TOÁN GAP PHÂN TÍCH ===
     @staticmethod
-    def algo_07_gap_analysis(history: List[str]) -> Tuple[str, float]:
+    def algo_07_gap_analysis(history):
         """Phân tích khoảng cách xuất hiện"""
         if len(history) < 10: return 'T', 0.53
         
@@ -230,7 +229,7 @@ class TaiXiuReal20Algorithms:
     
     # === 8. THUẬT TOÁN CHU KỲ ===
     @staticmethod
-    def algo_08_cycle_detection(history: List[str]) -> Tuple[str, float]:
+    def algo_08_cycle_detection(history):
         """Phát hiện chu kỳ lặp"""
         if len(history) < 12: return 'T', 0.53
         
@@ -256,7 +255,7 @@ class TaiXiuReal20Algorithms:
     
     # === 9. THUẬT TOÁN TÍN HIỆU ĐẢO CHIỀU ===
     @staticmethod
-    def algo_09_reversal_signal(history: List[str]) -> Tuple[str, float]:
+    def algo_09_reversal_signal(history):
         """Phát hiện điểm đảo chiều"""
         if len(history) < 8: return 'T', 0.52
         
@@ -282,7 +281,7 @@ class TaiXiuReal20Algorithms:
     
     # === 10. THUẬT TOÁN XÁC SUẤT CÓ ĐIỀU KIỆN ===
     @staticmethod
-    def algo_10_conditional_probability(history: List[str]) -> Tuple[str, float]:
+    def algo_10_conditional_probability(history):
         """Xác suất có điều kiện"""
         if len(history) < 12: return 'T', 0.53
         
@@ -330,7 +329,7 @@ class TaiXiuReal20Algorithms:
     
     # === 11. THUẬT TOÁN TRUNG BÌNH ĐỘNG ===
     @staticmethod
-    def algo_11_moving_average(history: List[str]) -> Tuple[str, float]:
+    def algo_11_moving_average(history):
         """Phân tích bằng trung bình động"""
         if len(history) < 10: return 'T', 0.53
         
@@ -351,7 +350,7 @@ class TaiXiuReal20Algorithms:
     
     # === 12. THUẬT TOÁN BIẾN ĐỘNG ===
     @staticmethod
-    def algo_12_volatility(history: List[str]) -> Tuple[str, float]:
+    def algo_12_volatility(history):
         """Phân tích biến động"""
         if len(history) < 12: return 'T', 0.53
         
@@ -372,7 +371,7 @@ class TaiXiuReal20Algorithms:
     
     # === 13. THUẬT TOÁN ENTROPY ===
     @staticmethod
-    def algo_13_entropy_analysis(history: List[str]) -> Tuple[str, float]:
+    def algo_13_entropy_analysis(history):
         """Phân tích entropy"""
         if len(history) < 10: return 'T', 0.52
         
@@ -396,7 +395,7 @@ class TaiXiuReal20Algorithms:
     
     # === 14. THUẬT TOÁN PATTERN NGẮN ===
     @staticmethod
-    def algo_14_short_pattern(history: List[str]) -> Tuple[str, float]:
+    def algo_14_short_pattern(history):
         """Phát hiện pattern ngắn"""
         if len(history) < 6: return 'T', 0.52
         
@@ -434,7 +433,7 @@ class TaiXiuReal20Algorithms:
     
     # === 15. THUẬT TOÁN PHÂN TÍCH DÃY ===
     @staticmethod
-    def algo_15_sequence_analysis(history: List[str]) -> Tuple[str, float]:
+    def algo_15_sequence_analysis(history):
         """Phân tích dãy số liên tiếp"""
         if len(history) < 8: return 'T', 0.52
         
@@ -453,7 +452,7 @@ class TaiXiuReal20Algorithms:
     
     # === 16. THUẬT TOÁN Z-SCORE ===
     @staticmethod
-    def algo_16_zscore(history: List[str]) -> Tuple[str, float]:
+    def algo_16_zscore(history):
         """Phân tích Z-Score"""
         if len(history) < 8: return 'T', 0.53
         
@@ -474,7 +473,7 @@ class TaiXiuReal20Algorithms:
     
     # === 17. THUẬT TOÁN TƯƠNG QUAN ===
     @staticmethod
-    def algo_17_correlation(history: List[str]) -> Tuple[str, float]:
+    def algo_17_correlation(history):
         """Phân tích tương quan"""
         if len(history) < 10: return 'T', 0.53
         
@@ -504,7 +503,7 @@ class TaiXiuReal20Algorithms:
     
     # === 18. THUẬT TOÁN MẬT ĐỘ ===
     @staticmethod
-    def algo_18_density(history: List[str]) -> Tuple[str, float]:
+    def algo_18_density(history):
         """Phân tích mật độ xuất hiện"""
         if len(history) < 12: return 'T', 0.53
         
@@ -523,7 +522,7 @@ class TaiXiuReal20Algorithms:
     
     # === 19. THUẬT TOÁN THỐNG KÊ ===
     @staticmethod
-    def algo_19_statistical(history: List[str]) -> Tuple[str, float]:
+    def algo_19_statistical(history):
         """Phân tích thống kê nâng cao"""
         if len(history) < 15: return 'T', 0.54
         
@@ -547,7 +546,7 @@ class TaiXiuReal20Algorithms:
     
     # === 20. THUẬT TOÁN TỔNG HỢP THÔNG MINH ===
     @staticmethod
-    def algo_20_smart_ensemble(history: List[str]) -> Tuple[str, float]:
+    def algo_20_smart_ensemble(history):
         """Tổng hợp thông minh từ các thuật toán"""
         if len(history) < 8: return 'T', 0.52
         
@@ -585,35 +584,31 @@ class TaiXiuReal20Algorithms:
             final_conf = (x_score / (t_score + x_score)) * 0.7 + 0.3
             return 'X', min(0.75, final_conf)
 
-# ================= HÀM TÍNH TÀI / XỈU =================
-def get_tai_xiu(d1: int, d2: int, d3: int) -> str:
-    return "Tài" if (d1 + d2 + d3) >= 11 else "Xỉu"
-
 # ================= HÀM DỰ ĐOÁN =================
-def predict_next(history_list: List[str]) -> Tuple[str, float]:
-    """Dự đoán kết quả tiếp theo với 20 thuật toán"""
+def predict_next():
+    """Dự đoán kết quả tiếp theo"""
+    history_list = list(history)
+    
     if len(history_list) < 5:
-        return "Đang thu thập dữ liệu...", 0.0
+        return "Chờ dữ liệu...", 0.0
     
     try:
-        # Sử dụng thuật toán tổng hợp thông minh
         prediction, confidence = TaiXiuReal20Algorithms.algo_20_smart_ensemble(history_list)
-        
-        # Chuyển đổi ký hiệu sang tiếng Việt
-        result = "Tài" if prediction == 'T' else "Xỉu"
-        
-        # Chuyển đổi confidence sang phần trăm (0-100)
+        ket_qua = "Tài" if prediction == 'T' else "Xỉu"
         confidence_percent = min(100, max(0, confidence * 100))
-        
-        return result, round(confidence_percent, 1)
+        return ket_qua, round(confidence_percent, 1)
     
     except Exception as e:
         print(f"❌ Lỗi dự đoán: {e}")
         return "Lỗi dự đoán", 0.0
 
-# ================= XỬ LÝ WEBSOCKET =================
+# ================= HÀM TÀI / XỈU =================
+def get_tai_xiu(d1, d2, d3):
+    return "Tài" if (d1 + d2 + d3) >= 11 else "Xỉu"
+
+# ================= WEBSOCKET =================
 def on_message(ws, message):
-    global latest_result, history
+    global latest_result
     try:
         data = json.loads(message)
 
@@ -633,15 +628,13 @@ def on_message(ws, message):
                             if latest_result["Phien"] != session_id:
                                 total = d1 + d2 + d3
                                 ket_qua = get_tai_xiu(d1, d2, d3)
-                                
+
                                 # Lưu vào lịch sử
-                                history_symbol = 'T' if ket_qua == 'Tài' else 'X'
-                                history.append(history_symbol)
-                                
+                                history.append("T" if ket_qua == "Tài" else "X")
+
                                 # Dự đoán kết quả tiếp theo
-                                du_doan, do_tin_cay = predict_next(list(history))
-                                
-                                # Cập nhật kết quả
+                                du_doan, do_tin_cay = predict_next()
+
                                 latest_result.update({
                                     "Phien": session_id,
                                     "Xuc_xac_1": d1,
@@ -652,20 +645,19 @@ def on_message(ws, message):
                                     "Du_doan": du_doan,
                                     "Do_tin_cay": do_tin_cay
                                 })
-                                
-                                print(f"✅ Phiên {session_id}: {ket_qua} ({d1},{d2},{d3}) Tổng: {total}")
-                                print(f"   Dự đoán tiếp: {du_doan} (Tin cậy: {do_tin_cay}%)")
-                                print(f"   Lịch sử ({len(history)}): {''.join(history[-10:])}")
+
+                                print(f"✅ Phiên {session_id} | {ket_qua} | {d1}-{d2}-{d3} | Dự đoán: {du_doan} ({do_tin_cay}%)")
+                                print(f"   Lịch sử ({len(history)}): {''.join(list(history)[-10:])}")
 
     except Exception as e:
-        print("❌ Lỗi xử lý WS:", e)
+        print("❌ WS message error:", e)
 
 def on_error(ws, error):
-    print("❌ WebSocket lỗi:", error)
+    print("❌ WS error:", error)
 
 def on_close(ws, code, msg):
-    print("🔄 WebSocket đóng – reconnect sau 5s")
-    time.sleep(5)
+    print("🔄 WS đóng – reconnect sau 3s")
+    time.sleep(3)
     start_ws_thread()
 
 def on_open(ws):
@@ -694,68 +686,36 @@ def start_ws_thread():
 
 # ================= FLASK API =================
 app = Flask(__name__)
+
+# 🔥 KEEP ALIVE – CHỐNG NGỦ ĐÔNG
+@app.route("/ping")
+def ping():
+    return "pong"
+
 @app.route("/api/taixiumd5")
 def api_taixiu():
     with lock:
         return jsonify(latest_result)
 
-
 @app.route("/api/history")
 def api_history():
-    """API xem lịch sử"""
     with lock:
-        history_list = list(history)
         return jsonify({
-            "total": len(history_list),
-            "history": history_list,
-            "tai_count": history_list.count('T'),
-            "xiu_count": history_list.count('X'),
-            "tai_percentage": round(
-                history_list.count('T') / len(history_list) * 100, 1
-            ) if history_list else 0
+            "total": len(history),
+            "history": list(history)
         })
 
-
-@app.route("/api/stats")
-def api_stats():
-    """API thống kê"""
-    with lock:
-        history_list = list(history)
-
-        if history_list:
-            du_doan, do_tin_cay = predict_next(history_list)
-
-            return jsonify({
-                "total_games": len(history_list),
-                "tai_count": history_list.count('T'),
-                "xiu_count": history_list.count('X'),
-                "tai_percentage": round(
-                    history_list.count('T') / len(history_list) * 100, 1
-                ),
-                "last_10_games": history_list[-10:] if len(history_list) >= 10 else history_list,
-                "next_prediction": du_doan,
-                "confidence": do_tin_cay,
-                "algorithms_count": 20,
-                "status": "active"
-            })
-
-        return jsonify({"message": "Chưa có dữ liệu"})
-
-
-# ================= MAIN – BẮT BUỘC PHẢI CÓ =================
+# ================= MAIN =================
 if __name__ == "__main__":
-    # Chạy WebSocket song song
     threading.Thread(
         target=start_ws_thread,
         daemon=True
     ).start()
 
-    # Chạy Flask API (Render cấp PORT)
     port = int(os.environ.get("PORT", 5000))
-    print(f"🚀 MD5 TÀI XỈU AI đang chạy tại 0.0.0.0:{port}")
+    print(f"🚀 RUNNING ON PORT {port}")
 
     app.run(
         host="0.0.0.0",
         port=port,
         debug=False
-    )
