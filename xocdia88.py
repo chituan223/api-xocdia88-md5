@@ -705,17 +705,20 @@ def api_history():
             "history": list(history)
         })
 
-# ================= MAIN =================
+# ================= MAIN – BẮT BUỘC PHẢI CÓ =================
 if __name__ == "__main__":
+    # Chạy WebSocket song song
     threading.Thread(
         target=start_ws_thread,
         daemon=True
     ).start()
 
+    # Chạy Flask API (Render cấp PORT)
     port = int(os.environ.get("PORT", 5000))
-    print(f"🚀 RUNNING ON PORT {port}")
+    print(f"🚀 MD5 TÀI XỈU AI đang chạy tại 0.0.0.0:{port}")
 
     app.run(
         host="0.0.0.0",
         port=port,
         debug=False
+    )
