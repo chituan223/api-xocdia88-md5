@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-import threading, websocket, json, time
+import threading, websocket, json, time, os
 from collections import deque
 
 app = Flask(__name__)
@@ -9,7 +9,7 @@ WS_URL = "wss://taixiumd5.system32-cloudfare-356783752985678522.monster/signalr/
 HISTORY_LEN = 20
 VER_LEN = 12
 
-# ================= BIẾN DỮ LIỆU =================
+# ================= BIẾN =================
 latest_result = {
     "phien": None,
     "xuc_xac_1": -1,
@@ -23,8 +23,9 @@ latest_result = {
 history = deque(maxlen=HISTORY_LEN)
 lock = threading.Lock()
 
+# ================= BẢNG VER =================
 prediction_table = {
-    "TTTTTTTTTTTTT": "Tài",
+  "TTTTTTTTTTTTT": "Tài",
 "TTTTTTTTTTTTX": "Tài",
 "TTTTTTTTTTTXT": "Xỉu",
 "TTTTTTTTTTTXX": "Xỉu",
@@ -35,11 +36,11 @@ prediction_table = {
 "TTTTTTTTTXTTT": "Tài",
 "TTTTTTTTTXTTX": "Tài",
 "TTTTTTTTTXTXT": "Xỉu",
-"TTTTTTTTTXTXX": "TÀi",
-"TTTTTTTTTXXTT": "XỈU",
+"TTTTTTTTTXTXX": "Xỉu",
+"TTTTTTTTTXXTT": "Tài",
 "TTTTTTTTTXXTX": "Tài",
 "TTTTTTTTTXXXT": "Xỉu",
-"TTTTTTTTTXXXX": "XỈu",
+"TTTTTTTTTXXXX": "Tài",
 "TTTTTTTTXTTTT": "Tài",
 "TTTTTTTTXTTTX": "Tài",
 "TTTTTTTTXTTXT": "Xỉu",
@@ -8216,13 +8217,15 @@ prediction_table = {
 "XXXXXXXXXXXTX": "Tài",
 "XXXXXXXXXXXXT": "Xỉu",
 "XXXXXXXXXXXXX": "Xỉu",
+"TTTTTTTXTXXXX": "Tài"
 }
 
+# ================= VER =================
 def predict_ver():
-    if len(history) < 12:
+    if len(history) < VER_LEN:
         return "Chờ dữ liệu"
 
-    seq = "".join(list(history)[-VER_LEN:])
+    seq = "".join(history)[-VER_LEN:]
 
     if seq in prediction_table:
         return prediction_table[seq]
@@ -8237,41 +8240,47 @@ def predict_ver():
 # ================= SIGNALR =================
 def on_message(ws, message):
     global latest_result
-    messages = message.split('\x1e')
-    for msg in messages:
+    for msg in message.split('\x1e'):
         if not msg:
             continue
         try:
             data = json.loads(msg)
-            if "M" in data:
-                for item in data["M"]:
-                    if item.get("M") == "Md5sessionInfo":
-                        info = item["A"][0]
-                        phien = info.get("SessionID")
-                        r = info.get("Result", {})
-                        d1, d2, d3 = r.get("Dice1"), r.get("Dice2"), r.get("Dice3")
-                        if None in (d1, d2, d3):
-                            continue
+            if "M" not in data:
+                continue
 
-                        with lock:
-                            if latest_result["phien"] == phien:
-                                continue
+            for item in data["M"]:
+                if item.get("M") != "Md5sessionInfo":
+                    continue
 
-                            tong = d1 + d2 + d3
-                            kq = "Tài" if tong >= 11 else "Xỉu"
-                            history.append("T" if kq == "Tài" else "X")
+                info = item["A"][0]
+                phien = info.get("SessionID")
+                r = info.get("Result", {})
 
-                            latest_result.update({
-                                "phien": phien,
-                                "xuc_xac_1": d1,
-                                "xuc_xac_2": d2,
-                                "xuc_xac_3": d3,
-                                "tong": tong,
-                                "ket_qua": kq,
-                                "du_doan": predict_ver()
-                            })
-        except:
-            pass
+                d1, d2, d3 = r.get("Dice1"), r.get("Dice2"), r.get("Dice3")
+                if None in (d1, d2, d3):
+                    continue
+
+                with lock:
+                    if latest_result["phien"] == phien:
+                        continue
+
+                    tong = d1 + d2 + d3
+                    ket_qua = "Tài" if tong >= 11 else "Xỉu"
+                    history.append("T" if ket_qua == "Tài" else "X")
+
+                    latest_result.update({
+                        "phien": phien,
+                        "xuc_xac_1": d1,
+                        "xuc_xac_2": d2,
+                        "xuc_xac_3": d3,
+                        "tong": tong,
+                        "ket_qua": ket_qua,
+                        "du_doan": predict_ver()
+                    })
+
+                    print(f"✅ {phien} | {ket_qua} | dự đoán {latest_result['du_doan']}")
+        except Exception as e:
+            print("WS error:", e)
 
 def on_open(ws):
     ws.send(json.dumps({"protocol": "json", "version": 1}) + "\x1e")
@@ -8284,12 +8293,10 @@ def start_ws():
                 on_open=on_open,
                 on_message=on_message
             )
-            ws.run_forever()
-        except:
-            time.sleep(5)
-
-# ⚠️ Trên Vercel thread này KHÔNG đảm bảo sống
-threading.Thread(target=start_ws, daemon=True).start()
+            ws.run_forever(ping_interval=15, ping_timeout=5)
+        except Exception as e:
+            print("Reconnect WS:", e)
+            time.sleep(3)
 
 # ================= API =================
 @app.route("/")
@@ -8306,6 +8313,8 @@ def api_history():
     with lock:
         return jsonify(list(history))
 
-# Vercel cần export app
-def handler(request):
-    return app
+# ================= MAIN =================
+if __name__ == "__main__":
+    threading.Thread(target=start_ws, daemon=True).start()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
