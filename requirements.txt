@@ -1,4 +1,2 @@
-flask
+Flask
 websocket-client
-requests
-numpy
