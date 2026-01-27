@@ -1,1 +1,14 @@
-
+{
+  "builds": [
+    {
+      "src": "xocdia88.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "xocdia88.py"
+    }
+  ]
+}
